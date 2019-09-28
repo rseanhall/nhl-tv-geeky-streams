@@ -34,7 +34,7 @@ Requires a favourite team and preferred stream quality.`,
     },
   }).strict().argv;
 
-  const config: Config = yaml.safeLoad(fs.readFileSync("./config.yaml"));
+  const config: Config = yaml.safeLoad(fs.readFileSync("./src/config.yaml.local"));
   // don't hide other teams if none are favourited
   const hasFavouriteTeams = !!(config.favouriteTeams && config.favouriteTeams.length);
   config.hideOtherTeams = hasFavouriteTeams && config.hideOtherTeams ||

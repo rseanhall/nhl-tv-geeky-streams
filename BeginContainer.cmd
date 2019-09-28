@@ -1,0 +1,2 @@
+rem docker-compose build
+docker run --name dev-nhltv -v C:\src\nhl-tv-geeky-streams\src:/app/src -v C:\src\nhl-tv-geeky-streams\tmp:/app/tmp -v C:\src\nhl-tv-geeky-streams\video:/app/video -it nhl-tv-geeky-streams_nhltv

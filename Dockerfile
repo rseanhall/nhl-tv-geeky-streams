@@ -27,4 +27,4 @@ USER node
 
 RUN yarn install
 
-CMD [ "yarn", "start" ]
+CMD [ "../bin/sh" ]
