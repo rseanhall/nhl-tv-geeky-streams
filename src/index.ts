@@ -23,6 +23,7 @@ import { download } from "./download";
 
 interface CommandLineConfig {
   passive: boolean;
+  startDate: string;
 }
 
 const main = async () => {
@@ -32,7 +33,20 @@ const main = async () => {
 Requires a favourite team and preferred stream quality.`,
       type: "boolean",
     },
+    startDate: {
+      description: "Set the initial date to find games.",
+      requiresArg: true,
+      type: "string",
+    },
   }).strict().argv;
+
+  let startDate: luxon.DateTime;
+  try {
+    if (argv.startDate) {
+      const isoString = new Date(argv.startDate).toISOString();
+      startDate = luxon.DateTime.fromISO(isoString);
+    }
+  } catch { }
 
   const config: Config = yaml.safeLoad(fs.readFileSync("./src/config.yaml.local"));
   // don't hide other teams if none are favourited
@@ -40,9 +54,12 @@ Requires a favourite team and preferred stream quality.`,
   config.hideOtherTeams = hasFavouriteTeams && config.hideOtherTeams ||
                           argv.passive;
 
-  // will set timezone to somewhat central US so that we always get all matches
-  // for current US day, even if you are actually in Asia
-  let dateLastSelected = luxon.DateTime.local().setZone(config.matchTimeZone);
+  if (!startDate) {
+    // will set timezone to somewhat central US so that we always get all matches
+    // for current US day, even if you are actually in Asia
+    startDate = luxon.DateTime.local().setZone(config.matchTimeZone);
+  }
+  let dateLastSelected = startDate;
   while (true) {
     const gameList = await getGameList(config, dateLastSelected);
     const gameSelection = await chooseGame(argv.passive, gameList);
