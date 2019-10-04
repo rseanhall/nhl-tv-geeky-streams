@@ -20,9 +20,11 @@ import {
   calcRecordingOffset,
 } from "./calcRecordingOffset";
 import { download } from "./download";
+import { removeSilence } from "./removeSilence";
 
 interface CommandLineConfig {
   passive: boolean;
+  removeSilence: string;
   startDate: string;
 }
 
@@ -33,12 +35,21 @@ const main = async () => {
 Requires a favourite team and preferred stream quality.`,
       type: "boolean",
     },
+    removeSilence: {
+      description: "Removes silent parts of video.",
+      requiresArg: true,
+      type: "string",
+    },
     startDate: {
       description: "Set the initial date to find games.",
       requiresArg: true,
       type: "string",
     },
   }).strict().argv;
+
+  if (argv.removeSilence) {
+    return removeSilence(argv.removeSilence);
+  }
 
   let startDate: luxon.DateTime;
   try {
