@@ -36,6 +36,7 @@ const registerDisneyApi = axiosRestyped.create<RegisterDisneyApi>({
 
 export interface IEspnAuthenticationSession {
   requestBamAccessToken(allowInteraction: boolean): Promise<string>;
+  requestDeviceTokens(): Promise<boolean>;
 }
 
 interface EspnPlusAuthenticationSessionData {
@@ -666,6 +667,10 @@ class EspnAuthenticationSession implements IEspnAuthenticationSession {
     } catch {
       return false;
     }
+  }
+
+  async requestDeviceTokens(): Promise<boolean> {
+    return this.ensureBamDeviceRefreshToken();
   }
 
   async ensureBamDeviceRefreshToken(): Promise<boolean> {

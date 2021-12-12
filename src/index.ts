@@ -28,10 +28,12 @@ import { chooseStream } from "./chooseStream";
 import {
   calcRecordingOffset,
 } from "./calcRecordingOffset";
+import { createEspnAuthSession } from "./espnAuth";
 
 interface CommandLineConfig {
   passive: boolean;
   startDate?: string;
+  test: boolean;
 }
 
 const main = async (): Promise<void> => {
@@ -46,10 +48,15 @@ Requires a favourite team and preferred stream quality.`,
       requiresArg: true,
       type: "string",
     },
+    test: {
+      description: "Test",
+      type: "boolean",
+    },
   }).strict().argv;
   const argv: CommandLineConfig = {
     passive: !!yargv.passive,
     startDate: yargv.startDate,
+    test: !!yargv.test,
   };
 
   let startDate: luxon.DateTime | undefined;
@@ -66,6 +73,13 @@ Requires a favourite team and preferred stream quality.`,
   config.hideOtherTeams = hasFavouriteTeams && config.hideOtherTeams ||
                           argv.passive;
   setLogTimings(!!config.enableLogTimings);
+
+  if (argv.test) {
+    const espnAuthSession = createEspnAuthSession();
+    const result = await espnAuthSession.requestDeviceTokens();
+    console.log(result);
+    return;
+  }
 
   if (!startDate) {
     // will set timezone to somewhat central US so that we always get all matches
