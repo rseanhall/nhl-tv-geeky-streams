@@ -24,6 +24,9 @@ import {
 import {
   getNhltvGameList,
 } from "./nhltvProvider";
+import {
+  getNhltvCleengGameList,
+} from "./nhltvCleengProvider";
 
 import { chooseFeed } from "./chooseFeed";
 import { chooseGame } from "./chooseGame";
@@ -31,6 +34,7 @@ import { chooseStream } from "./chooseStream";
 import {
   calcRecordingOffset,
 } from "./calcRecordingOffset";
+import { getViaplayGameList } from "./viaplayProvider";
 
 interface CommandLineConfig {
   passive: boolean;
@@ -68,7 +72,7 @@ Requires a favourite team and preferred stream quality.`,
   const hasFavouriteTeams = !!(config.favouriteTeams && config.favouriteTeams.length);
   config.hideOtherTeams = hasFavouriteTeams && config.hideOtherTeams ||
                           argv.passive;
-  setLogTimings(!!config.enableLogTimings);
+  setLogTimings(config.enableLogTimings);
 
   if (!startDate) {
     // will set timezone to somewhat central US so that we always get all matches
@@ -159,18 +163,29 @@ const getGameList = async (
   config: Config,
   date: luxon.DateTime
 ): Promise<ProcessedGameList> => {
-  const nhltvGamesPromise = getNhltvGameList(config, date);
-  const espnGamesPromise = getEspnGameList(config, date);
-  const ballyGamesPromise = config.enableExperimentalProviders ? getBallyGameList(config, date) : null;
-  const nhltvGames = await nhltvGamesPromise;
-  const espnGames = await espnGamesPromise;
+  const disableNhltv = !!config.disableLegacyNhltvGameStatus;
+  const disableNhltvCleeng = !config.showOtherProviders && config.preferredProvider !== 'nhltv';
+  const disableEspn = !config.showOtherProviders && config.preferredProvider !== 'espn';
+  const disableBally = !config.enableExperimentalProviders || !config.showOtherProviders && config.preferredProvider !== 'bally';
+  const disableViaplay = !config.enableExperimentalProviders || !config.showOtherProviders && config.preferredProvider !== 'viaplay.se';
+
+  // Continue using legacy NHL.TV API to get the game's status.
+  const nhltvGamesPromise = disableNhltv ? null : getNhltvGameList(config, date);
+  const nhltvCleengGamesPromise = disableNhltvCleeng ? null : getNhltvCleengGameList(config, date);
+  const espnGamesPromise = disableEspn ? null : getEspnGameList(config, date);
+  const ballyGamesPromise = disableBally ? null : getBallyGameList(config, date);
+  const viaplayGamesPromise = disableViaplay ? null : getViaplayGameList(config, date);
+  const nhltvGames = await nhltvGamesPromise ?? [];
+  const nhltvCleengGames = await nhltvCleengGamesPromise ?? [];
+  const espnGames = await espnGamesPromise ?? [];
   const ballyGames = await ballyGamesPromise ?? [];
+  const viaplayGames = await viaplayGamesPromise ?? [];
   
   const gamesById = new Map<string, ProviderGame[]>();
   const games: ProcessedGame[] = [];
   const hiddenGames: ProcessedGame[] = [];
   
-  [...nhltvGames, ...espnGames, ...ballyGames].forEach(providerGame => {
+  [...nhltvGames, ...nhltvCleengGames, ...espnGames, ...ballyGames, ...viaplayGames].forEach(providerGame => {
     const key = getGameId(providerGame.getGameDateTime(), providerGame.getAwayTeam(), providerGame.getHomeTeam());
 
     let collection = gamesById.get(key);
