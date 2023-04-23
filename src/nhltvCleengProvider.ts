@@ -46,11 +46,33 @@ class NhltvCleengFeed implements ProviderFeed {
   }
 
   getFeed(): ProcessedFeed {
-    let mediaFeedType: MediaFeedType = MediaFeedType.Unknown;
+    let name: string | undefined = "";
+    let description: string | undefined = "";
+    let feedName = "";
     if (this.epgItem.clientContentMetadata.length) {
-      mediaFeedType = this.epgItem.clientContentMetadata[0].name as MediaFeedType;
-    } else if (this.epgItem.editorial.translations?.en?.description) {
-      mediaFeedType = this.epgItem.editorial.translations?.en?.description.toUpperCase() as MediaFeedType;
+      name = this.epgItem.clientContentMetadata[0].name?.toUpperCase();
+    }
+    description = this.epgItem.editorial.translations?.en?.description;
+
+    let callLetters = "";
+    let mediaFeedType: MediaFeedType = MediaFeedType.Unknown;
+    let mediaFeedTypeString = name || description || "";
+    if (mediaFeedTypeString === "US NATIONAL") {
+      mediaFeedType = MediaFeedType.National;
+      callLetters = "US";
+    } else if (mediaFeedTypeString === "CA NATIONAL") {
+      mediaFeedType = MediaFeedType.National;
+      callLetters = "CA";
+    } else if (mediaFeedTypeString) {
+      mediaFeedType = mediaFeedTypeString as MediaFeedType;
+    }
+
+    if (description && description !== mediaFeedTypeString && description !== mediaFeedType && description !== callLetters) {
+      if (!callLetters) {
+        callLetters = description;
+      } else {
+        feedName = description;
+      }
     }
 
     return {
@@ -59,8 +81,8 @@ class NhltvCleengFeed implements ProviderFeed {
       isLiveTvStream: this.epgItem.status.name === NHLTV_CLEENG_MEDIA_STATE.LIVE,
       info: {
         mediaFeedType,
-        callLetters: "",
-        feedName: "",
+        callLetters,
+        feedName,
       },
     };
   }
